@@ -12,6 +12,9 @@ extension CmuxSettingsFileStore {
     ) {
         // One section value for every toggle below. A `SettingCatalog()` per call is a whole
         // catalog per stack slot in a debug build, which is enough to overflow a worker thread.
+        if let canvas = root["canvas"] as? [String: Any] {
+            parseCanvasSpotlightSection(canvas, sourcePath: sourcePath, snapshot: &snapshot)
+        }
         let betaFeatures = BetaFeaturesCatalogSection()
         if let integrations = root["integrations"] as? [String: Any] {
             parseIntegrationsSection(integrations, sourcePath: sourcePath, snapshot: &snapshot)
@@ -317,6 +320,29 @@ extension CmuxSettingsFileStore {
             return nil
         }
         return .some(normalized)
+    }
+
+    private func parseCanvasSpotlightSection(
+        _ section: [String: Any],
+        sourcePath: String,
+        snapshot: inout ResolvedSettingsSnapshot
+    ) {
+        let canvas = CanvasCatalogSection()
+        let size = CanvasCatalogSection.spotlightSizeRange
+        let position = CanvasCatalogSection.spotlightPositionRange
+        for (name, key, range) in [
+            ("spotlightWidth", canvas.spotlightWidth, size),
+            ("spotlightHeight", canvas.spotlightHeight, size),
+            ("spotlightHorizontalPosition", canvas.spotlightHorizontalPosition, position),
+            ("spotlightVerticalPosition", canvas.spotlightVerticalPosition, position),
+        ] {
+            guard let rawValue = section[name] else { continue }
+            guard let value = jsonInt(rawValue), range.contains(value) else {
+                logInvalid(key.id, sourcePath: sourcePath)
+                continue
+            }
+            snapshot.managedUserDefaults[key.userDefaultsKey] = .int(value)
+        }
     }
 
     func parseFileEditorSection(

@@ -100,13 +100,8 @@ extension Workspace {
         let model = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
         model.restorePanes(panes)
         let center = CGPoint(x: container.width / 2, y: container.height / 2)
-        let width = container.width * 0.65
-        let height = container.height * 0.65
-        let enlargedFrame = CGRect(
-            x: center.x - width / 2,
-            y: center.y - height / 2,
-            width: width,
-            height: height
+        let enlargedFrame = CanvasLayoutSettings.spotlightFrame(
+            in: CGSize(width: container.width, height: container.height)
         )
         model.setFrame(enlargedFrame, for: panelID)
         model.bringToFront(panelID)

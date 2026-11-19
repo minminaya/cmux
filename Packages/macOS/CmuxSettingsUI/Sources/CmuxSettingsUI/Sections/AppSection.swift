@@ -41,6 +41,10 @@ public struct AppSection: View {
     @State private var markdownFontFamily: DefaultsValueModel<String>
     @State private var markdownMaxWidth: DefaultsValueModel<Int>
     @State private var canvasPaneGap: DefaultsValueModel<Int>
+    @State private var spotlightWidth: DefaultsValueModel<Int>
+    @State private var spotlightHeight: DefaultsValueModel<Int>
+    @State private var spotlightHorizontalPosition: DefaultsValueModel<Int>
+    @State private var spotlightVerticalPosition: DefaultsValueModel<Int>
     @State private var canvasSnapping: DefaultsValueModel<Bool>
     @State private var fileEditorWordWrap: DefaultsValueModel<Bool>
     @State private var fileEditorSyntaxHighlighting: DefaultsValueModel<Bool>
@@ -117,6 +121,10 @@ public struct AppSection: View {
         _markdownFontFamily = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.fontFamily))
         _markdownMaxWidth = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.maxWidth))
         _canvasPaneGap = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.paneGap))
+        _spotlightWidth = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightWidth))
+        _spotlightHeight = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightHeight))
+        _spotlightHorizontalPosition = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightHorizontalPosition))
+        _spotlightVerticalPosition = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightVerticalPosition))
         _canvasSnapping = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.snappingEnabled))
         _fileEditorWordWrap = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.fileEditor.wordWrap))
         _fileEditorSyntaxHighlighting = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.fileEditor.syntaxHighlighting))
@@ -178,7 +186,7 @@ public struct AppSection: View {
             mainCard
         }
         .task {
-            startSettingsObservation([language, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, focusHistoryIncludesPanesAndTabs, equalizeSplitsOnCreate, equalizeSplitsOnDividerDoubleClick, fileDrop, preferredEditor, openSupported, openMarkdown, globalFontMagnification, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, fileEditorSyntaxHighlighting, fileEditorLineNumbers, fileEditorIndentGuides, fileEditorCurrentLineHighlight, fileEditorTabWidth, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, paneFlashDoubleBlink, paneFlashOnTyping, paneFlashThemeColor, desktopNotifications, agentPermissionPrompt, agentTurnComplete, agentIdleReminder, soundName, soundWhenFocused, soundCommand, customSoundFile, soundOverrides, telemetry, confirmQuit, warnCloseTab, warnCloseAgentSession, warnCloseX, warnCloseWorkspace, alwaysConfirmCloseWorkspace, warnCloseWindow, hideCloseButton, renameSelects, paletteAllSurfaces])
+            startSettingsObservation([language, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, focusHistoryIncludesPanesAndTabs, equalizeSplitsOnCreate, equalizeSplitsOnDividerDoubleClick, fileDrop, preferredEditor, openSupported, openMarkdown, globalFontMagnification, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, spotlightWidth, spotlightHeight, spotlightHorizontalPosition, spotlightVerticalPosition, fileEditorWordWrap, fileEditorSyntaxHighlighting, fileEditorLineNumbers, fileEditorIndentGuides, fileEditorCurrentLineHighlight, fileEditorTabWidth, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, paneFlashDoubleBlink, paneFlashOnTyping, paneFlashThemeColor, desktopNotifications, agentPermissionPrompt, agentTurnComplete, agentIdleReminder, soundName, soundWhenFocused, soundCommand, customSoundFile, soundOverrides, telemetry, confirmQuit, warnCloseTab, warnCloseAgentSession, warnCloseX, warnCloseWorkspace, alwaysConfirmCloseWorkspace, warnCloseWindow, hideCloseButton, renameSelects, paletteAllSurfaces])
             await soundAgentCache.loadIfNeeded { await hostActions.notificationSoundAgentOptions() }
             if languageAtAppear == nil { languageAtAppear = language.current }; if telemetryAtAppear == nil { telemetryAtAppear = telemetry.current }
         }
@@ -205,6 +213,33 @@ public struct AppSection: View {
     }
 
     @ViewBuilder
+    private func spotlightPercentageRow(
+        key: DefaultsKey<Int>,
+        title: String,
+        subtitle: String? = nil,
+        model: DefaultsValueModel<Int>,
+        range: ClosedRange<Int>
+    ) -> some View {
+        let percentage = min(max(model.current, range.lowerBound), range.upperBound)
+        SettingsCardRow(configurationReview: .json(key.id), title, subtitle: subtitle) {
+            HStack {
+                Slider(
+                    value: Binding(
+                        get: { Double(percentage) },
+                        set: { model.set(Int($0.rounded())) }
+                    ),
+                    in: Double(range.lowerBound)...Double(range.upperBound),
+                    step: 1
+                )
+                .frame(width: 120)
+                .accessibilityLabel(title)
+                Text(Double(percentage) / 100, format: .percent.precision(.fractionLength(0)))
+                    .monospacedDigit()
+                    .frame(width: 48, alignment: .trailing)
+            }
+        }
+    }
+
     private var mainCard: some View {
         SettingsCard {
             // Language
@@ -510,6 +545,37 @@ public struct AppSection: View {
                     .controlSize(.small)
                     .accessibilityIdentifier("SettingsCanvasSnappingToggle")
             }
+            SettingsCardDivider()
+
+            spotlightPercentageRow(
+                key: catalog.canvas.spotlightWidth,
+                title: String(localized: "settings.app.spotlightWidth", defaultValue: "Floating Pane Width"),
+                model: spotlightWidth,
+                range: CanvasCatalogSection.spotlightSizeRange
+            )
+            SettingsCardDivider()
+            spotlightPercentageRow(
+                key: catalog.canvas.spotlightHeight,
+                title: String(localized: "settings.app.spotlightHeight", defaultValue: "Floating Pane Height"),
+                model: spotlightHeight,
+                range: CanvasCatalogSection.spotlightSizeRange
+            )
+            SettingsCardDivider()
+            spotlightPercentageRow(
+                key: catalog.canvas.spotlightHorizontalPosition,
+                title: String(localized: "settings.app.spotlightHorizontalPosition", defaultValue: "Floating Pane Horizontal Position"),
+                subtitle: String(localized: "settings.app.spotlightHorizontalPosition.subtitle", defaultValue: "Left at 0, centered at 50, right at 100."),
+                model: spotlightHorizontalPosition,
+                range: CanvasCatalogSection.spotlightPositionRange
+            )
+            SettingsCardDivider()
+            spotlightPercentageRow(
+                key: catalog.canvas.spotlightVerticalPosition,
+                title: String(localized: "settings.app.spotlightVerticalPosition", defaultValue: "Floating Pane Vertical Position"),
+                subtitle: String(localized: "settings.app.spotlightVerticalPosition.subtitle", defaultValue: "Top at 0, centered at 50, bottom at 100."),
+                model: spotlightVerticalPosition,
+                range: CanvasCatalogSection.spotlightPositionRange
+            )
             SettingsCardDivider()
 
             // Markdown Viewer Font Family

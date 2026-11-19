@@ -143,6 +143,34 @@ extension Array where Element == CuratedSettingEntry {
                 paths: ["canvas.snappingEnabled"],
                 synonyms: "canvas.snappingEnabled canvas snap snapping enabled edges drag resize align panes freeform layout"
             ),
+            .init(
+                section: .app,
+                id: "pane-spotlight-width",
+                title: String(localized: "settings.app.spotlightWidth", defaultValue: "Floating Pane Width"),
+                paths: ["canvas.spotlightWidth"],
+                synonyms: "floating pane spotlight zoom Width"
+            ),
+            .init(
+                section: .app,
+                id: "pane-spotlight-height",
+                title: String(localized: "settings.app.spotlightHeight", defaultValue: "Floating Pane Height"),
+                paths: ["canvas.spotlightHeight"],
+                synonyms: "floating pane spotlight zoom Height"
+            ),
+            .init(
+                section: .app,
+                id: "pane-spotlight-horizontal-position",
+                title: String(localized: "settings.app.spotlightHorizontalPosition", defaultValue: "Floating Pane Horizontal Position"),
+                paths: ["canvas.spotlightHorizontalPosition"],
+                synonyms: "floating pane spotlight zoom HorizontalPosition"
+            ),
+            .init(
+                section: .app,
+                id: "pane-spotlight-vertical-position",
+                title: String(localized: "settings.app.spotlightVerticalPosition", defaultValue: "Floating Pane Vertical Position"),
+                paths: ["canvas.spotlightVerticalPosition"],
+                synonyms: "floating pane spotlight zoom VerticalPosition"
+            ),
             .init(section: .app, id: "dock-badge", title: String(localized: "settings.app.dockBadge", defaultValue: "Dock Badge"), synonyms: "Dock Badge notifications.dockBadge badge dock unread count icon notifications red bubble"),
             .init(section: .app, id: "show-menu-bar", title: String(localized: "settings.app.showInMenuBar", defaultValue: "Show in Menu Bar"), synonyms: "Show in Menu Bar notifications.showInMenuBar menubar menu bar status item tray extra"),
             .init(section: .app, id: "unread-pane-ring", title: String(localized: "settings.notifications.paneRing.title", defaultValue: "Unread Pane Ring"), synonyms: "Unread Pane Ring notifications.unreadPaneRing blue border unread ring notification pane outline"),

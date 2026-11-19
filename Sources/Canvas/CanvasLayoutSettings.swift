@@ -1,5 +1,6 @@
 import Foundation
 import CmuxCanvas
+import CmuxSettings
 
 /// User-configurable canvas layout settings.
 ///
@@ -26,6 +27,24 @@ enum CanvasLayoutSettings {
 
     static func snappingEnabled(defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: snappingEnabledKey) as? Bool ?? defaultSnappingEnabled
+    }
+
+    /// Computes the floating pane frame using current settings at the time it opens.
+    static func spotlightFrame(in size: CGSize, defaults: UserDefaults = .standard) -> CGRect {
+        let catalog = CanvasCatalogSection()
+        func fraction(_ key: DefaultsKey<Int>, in range: ClosedRange<Int>) -> CGFloat {
+            CGFloat(Double(key.value(in: defaults)).clamped(to: Double(range.lowerBound)...Double(range.upperBound))) / 100
+        }
+        let sizeRange = CanvasCatalogSection.spotlightSizeRange
+        let positionRange = CanvasCatalogSection.spotlightPositionRange
+        let width = size.width * fraction(catalog.spotlightWidth, in: sizeRange)
+        let height = size.height * fraction(catalog.spotlightHeight, in: sizeRange)
+        return CGRect(
+            x: (size.width - width) * fraction(catalog.spotlightHorizontalPosition, in: positionRange),
+            y: (size.height - height) * fraction(catalog.spotlightVerticalPosition, in: positionRange),
+            width: width,
+            height: height
+        )
     }
 
     /// The metrics every canvas operation should use right now.

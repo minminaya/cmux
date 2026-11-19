@@ -2440,6 +2440,34 @@ enum CmuxEmbeddedConfigSchema {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "spotlightWidth": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 95,
+          "default": 65,
+          "description": "Width of the floating pane as a percentage of workspace width."
+        },
+        "spotlightHeight": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 95,
+          "default": 65,
+          "description": "Height of the floating pane as a percentage of workspace height."
+        },
+        "spotlightHorizontalPosition": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 50,
+          "description": "Horizontal position of the floating pane. 0% is left, 50% is centered, and 100% is right."
+        },
+        "spotlightVerticalPosition": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 50,
+          "description": "Vertical position of the floating pane. 0% is top, 50% is centered, and 100% is bottom."
+        },
         "paneGap": {
           "type": "integer",
           "minimum": 0,
