@@ -10,7 +10,8 @@ extension CanvasRootView: CanvasPaneViewDelegate {
     }
 
     func paneView(_ view: CanvasPaneView, mouseDownAt documentPoint: CGPoint, region: CanvasPaneHitRegion) {
-        guard let frame = model.layout.frame(of: view.paneID)?.cgRect else { return }
+        guard !isPresentingPaneSpotlight,
+              let frame = model.layout.frame(of: view.paneID)?.cgRect else { return }
         dragSession = DragSession(
             paneID: view.paneID,
             region: region,
@@ -146,6 +147,7 @@ extension CanvasRootView: CanvasPaneViewDelegate {
     }
 
     func paneView(_ view: CanvasPaneView, requestTearOutTab panelId: UUID, atDocumentPoint point: CGPoint) {
+        guard !isPresentingPaneSpotlight else { return }
         guard model.breakOutPanel(panelId) else {
             // Single-tab pane: nothing to tear out — degrade to a normal
             // pane drag so Option+drag never goes dead.
@@ -205,7 +207,7 @@ extension CanvasRootView: CanvasPaneViewDelegate {
 
     func paneViewDidRequestFocus(_ view: CanvasPaneView) {
         guard let panelId = selectedPanelId(of: view) else { return }
-        if model.layout.paneIDs.last != view.paneID {
+        if !isPresentingPaneSpotlight, model.layout.paneIDs.last != view.paneID {
             model.bringToFront(panelId)
             applyZOrder()
             callbacks.onLayoutChanged()

@@ -25,6 +25,10 @@ extension Workspace {
         if mode == .canvas {
             canvasModel.seedFromSplitFrames(splitPaneFramesByPanelId())
         }
+        if mode == .splits {
+            spotlightPaneID = nil
+            spotlightCanvasModel = nil
+        }
         layoutMode = mode
         // The rendered-panel set changes shape with the mode (canvas hosts each
         // pane's selected terminal directly in the pane hierarchy; splits host
@@ -55,6 +59,62 @@ extension Workspace {
     /// Toggles between split and canvas layout.
     func toggleCanvasLayout() {
         setLayoutMode(layoutMode == .canvas ? .splits : .canvas)
+    }
+
+    static let paneSpotlightButtonID = "cmux.pane.spotlight"
+
+    static var paneSpotlightButton: BonsplitConfiguration.SplitActionButton {
+        BonsplitConfiguration.SplitActionButton(
+            id: paneSpotlightButtonID,
+            icon: .systemImage("arrow.up.left.and.arrow.down.right"),
+            tooltip: String(localized: "pane.spotlight.expand", defaultValue: "Enlarge Pane"),
+            action: .custom(paneSpotlightButtonID)
+        )
+    }
+
+    /// Presents the split layout on a temporary canvas while a pane is enlarged.
+    func enterPaneSpotlight(in pane: PaneID) {
+        guard layoutMode == .splits, bonsplitController.zoomedPaneId == nil,
+              let tab = bonsplitController.selectedTabId(inPane: pane),
+              let panelID = panelIdFromSurfaceId(tab) else { return }
+
+        let snapshot = bonsplitController.layoutSnapshot()
+        let container = snapshot.containerFrame
+        guard container.width > 1, container.height > 1 else { return }
+
+        let frames = splitPaneFramesByPanelId(snapshot: snapshot)
+        let panes = bonsplitController.allPaneIds.compactMap { paneID -> CanvasModel.PersistablePane? in
+            guard let selectedTab = bonsplitController.selectedTabId(inPane: paneID),
+                  let selected = panelIdFromSurfaceId(selectedTab),
+                  let frame = frames[selected], frame.width > 1, frame.height > 1 else { return nil }
+            let panels = bonsplitController.tabIds(inPane: paneID).compactMap(panelIdFromSurfaceId)
+            return CanvasModel.PersistablePane(
+                paneId: paneID.id,
+                frame: frame,
+                panelIds: panels,
+                selectedPanelId: selected
+            )
+        }
+        guard panes.count > 1, panes.contains(where: { $0.paneId == pane.id }) else { return }
+
+        let model = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
+        model.restorePanes(panes)
+        let center = CGPoint(x: container.width / 2, y: container.height / 2)
+        let width = container.width * 0.65
+        let height = container.height * 0.65
+        let enlargedFrame = CGRect(
+            x: center.x - width / 2,
+            y: center.y - height / 2,
+            width: width,
+            height: height
+        )
+        model.setFrame(enlargedFrame, for: panelID)
+        model.bringToFront(panelID)
+        model.savedViewport = (canvasCenter: center, magnification: 1)
+        spotlightCanvasModel = model
+        spotlightPaneID = pane.id
+        setLayoutMode(.canvas)
+        focusPanel(panelID)
     }
 
     /// Canvas-mode directional focus: nearest pane spatially, then reveal it.
@@ -92,7 +152,7 @@ extension Workspace {
     /// Canvas panes (frames, tabs, selection) in z-order for the session
     /// snapshot; `nil` when the workspace has never entered canvas mode.
     func canvasSessionPaneSnapshots() -> [SessionCanvasPaneSnapshot]? {
-        let snapshots: [SessionCanvasPaneSnapshot] = canvasModel.persistablePanes.map { pane in
+        let snapshots: [SessionCanvasPaneSnapshot] = savedCanvasModel.persistablePanes.map { pane in
             SessionCanvasPaneSnapshot(
                 panelId: pane.paneId,
                 x: pane.frame.origin.x,
@@ -144,8 +204,8 @@ extension Workspace {
     /// entering canvas mode preserves what the user sees. Only the selected
     /// tab of each split pane has on-screen geometry; the rest are placed by
     /// the canvas placer afterwards.
-    private func splitPaneFramesByPanelId() -> [UUID: CGRect] {
-        let snapshot = bonsplitController.layoutSnapshot()
+    private func splitPaneFramesByPanelId(snapshot: LayoutSnapshot? = nil) -> [UUID: CGRect] {
+        let snapshot = snapshot ?? bonsplitController.layoutSnapshot()
         var frames: [UUID: CGRect] = [:]
         for pane in snapshot.panes {
             guard let selectedTabId = pane.selectedTabId,

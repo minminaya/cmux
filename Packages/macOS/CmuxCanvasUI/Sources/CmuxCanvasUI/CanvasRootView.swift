@@ -266,6 +266,28 @@ public final class CanvasRootView: NSView {
         }
     }
 
+    /// Whether the host temporarily presents a fixed split layout.
+    var isPresentingPaneSpotlight: Bool { spotlightPaneID != nil }
+
+    private var spotlightPaneID: UUID?
+
+    /// Configures the restore control on a temporarily enlarged pane.
+    ///
+    /// - Parameters:
+    ///   - paneID: The enlarged pane, if any.
+    ///   - label: Localized tooltip and accessibility label.
+    ///   - action: Restores the host's original layout.
+    public func configurePaneRestore(paneID: UUID?, label: String, action: @escaping () -> Void) {
+        spotlightPaneID = paneID
+        for (id, paneView) in paneViews {
+            let showsRestore = id.rawValue == paneID
+            paneView.configureRestoreButton(
+                label: showsRestore ? label : nil,
+                action: showsRestore ? action : nil
+            )
+        }
+    }
+
     // MARK: Sync
 
     /// Reconciles the canvas against the host's current panel set: pane
@@ -280,9 +302,9 @@ public final class CanvasRootView: NSView {
         )
         descriptorsByPanelId = Dictionary(uniqueKeysWithValues: descriptors.map { ($0.id, $0) })
 
-        // The focused pane always rides to the front, regardless of which
-        // entrypoint moved focus (click, keyboard, palette, socket).
-        if let focusedPanelId,
+        // Keep spotlight above the background even when a background pane
+        // takes keyboard focus.
+        if !isPresentingPaneSpotlight, let focusedPanelId,
            let focusedPane = model.paneID(containing: focusedPanelId),
            model.layout.paneIDs.last != focusedPane {
             model.bringToFront(focusedPanelId)

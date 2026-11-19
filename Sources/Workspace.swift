@@ -200,7 +200,7 @@ extension Workspace {
             currentDirectory: currentDirectory,
             focusedPanelId: focusedPanelId,
             layout: layout,
-            layoutMode: layoutMode.rawValue,
+            layoutMode: (spotlightPaneID == nil ? layoutMode : .splits).rawValue,
             canvasPanes: canvasSessionPaneSnapshots(),
             panels: panelSnapshots,
             statusEntries: statusSnapshots,
@@ -3023,7 +3023,10 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
 
     /// Durable canvas-layout state (pane frames, z-order). Lives on the
     /// workspace so it survives canvas view remounts and workspace switches.
-    let canvasModel = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
+    let savedCanvasModel = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
+    var spotlightCanvasModel: CanvasModel?
+    var spotlightPaneID: UUID?
+    var canvasModel: CanvasModel { spotlightCanvasModel ?? savedCanvasModel }
     private struct SurfaceTabBarExecutableButton {
         let button: CmuxSurfaceTabBarButton
         let builtInAction: CmuxSurfaceTabBarBuiltInAction?
@@ -4370,12 +4373,13 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
         let initialGhosttyConfig = WorkspaceContentView.resolveGhosttyAppearanceConfig(
             reason: "workspace.init"
         )
-        let appearance = Self.bonsplitAppearance(
+        var appearance = Self.bonsplitAppearance(
             from: initialGhosttyConfig.backgroundColor,
             backgroundOpacity: initialGhosttyConfig.backgroundOpacity,
             splitDividerColor: initialGhosttyConfig.splitDividerColor,
             tabTitleFontSize: initialGhosttyConfig.surfaceTabBarFontSize
         )
+        appearance.splitButtons.append(Self.paneSpotlightButton)
         let config = BonsplitConfiguration(
             allowSplits: true,
             allowCloseTabs: !CloseTabWarningStore(defaults: closeTabWarningDefaults).hidesTabCloseButton,
@@ -4848,9 +4852,10 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                 allowProjectLocalIcon: allowProjectLocalIcon
             )
         }
+        let buttonsWithSpotlight = bonsplitButtons + [Self.paneSpotlightButton]
         var configuration = bonsplitController.configuration
-        guard configuration.appearance.splitButtons != bonsplitButtons else { return }
-        configuration.appearance.splitButtons = bonsplitButtons
+        guard configuration.appearance.splitButtons != buttonsWithSpotlight else { return }
+        configuration.appearance.splitButtons = buttonsWithSpotlight
         bonsplitController.configuration = configuration
     }
 
@@ -15606,6 +15611,10 @@ extension Workspace: BonsplitDelegate {
             "pane=\(pane.id.uuidString.prefix(5)) identifier=\(identifier)"
         )
 #endif
+        if identifier == Self.paneSpotlightButtonID {
+            enterPaneSpotlight(in: pane)
+            return
+        }
         executeSurfaceTabBarCommandButton(identifier: identifier, inPane: pane)
     }
 

@@ -39,6 +39,12 @@ struct WorkspaceCanvasHostView: View {
             isWorkspaceVisible: isWorkspaceVisible,
             accentColor: accentColor
         )
+        .onChange(of: workspace.orderedPanelIds) { _, _ in
+            if let spotlightPaneID = workspace.spotlightPaneID,
+               !workspace.bonsplitController.allPaneIds.contains(where: { $0.id == spotlightPaneID }) {
+                workspace.setLayoutMode(.splits)
+            }
+        }
     }
 
     private var descriptors: [CanvasPaneDescriptor] {
@@ -309,6 +315,12 @@ private struct CanvasRootRepresentable: NSViewRepresentable {
             focusedPanelId: focusedPanelId,
             isWorkspaceVisible: isWorkspaceVisible
         )
+        nsView.configurePaneRestore(
+            paneID: workspace.spotlightPaneID,
+            label: String(localized: "pane.spotlight.restore", defaultValue: "Restore Split Layout")
+        ) { [weak workspace] in
+            workspace?.setLayoutMode(.splits)
+        }
     }
 
     static func dismantleNSView(_ nsView: CanvasRootView, coordinator: ()) {

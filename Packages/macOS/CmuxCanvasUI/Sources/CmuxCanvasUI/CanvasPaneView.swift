@@ -30,6 +30,21 @@ final class CanvasPaneView: NSView {
     let contentContainer = NSView()
 
     private let titleBarHost: NSHostingView<CanvasPaneTitleBarView>
+    private let restoreButton = NSButton()
+    private var restoreButtonWidth: NSLayoutConstraint!
+    private var restoreAction: (() -> Void)?
+
+    func configureRestoreButton(label: String?, action: (() -> Void)?) {
+        restoreAction = action
+        restoreButton.isHidden = action == nil
+        restoreButtonWidth.constant = action == nil ? 0 : CanvasPaneTitleBarView.height
+        restoreButton.toolTip = label
+        restoreButton.setAccessibilityLabel(label)
+    }
+
+    @objc private func restorePane() {
+        restoreAction?()
+    }
     private var chrome = CanvasPaneChrome(
         tabs: [],
         selectedTabId: nil,
@@ -104,12 +119,27 @@ final class CanvasPaneView: NSView {
 
         titleBarHost.translatesAutoresizingMaskIntoConstraints = false
         addSubview(titleBarHost)
+        restoreButton.image = NSImage(
+            systemSymbolName: "arrow.down.right.and.arrow.up.left",
+            accessibilityDescription: nil
+        )
+        restoreButton.isBordered = false
+        restoreButton.target = self
+        restoreButton.action = #selector(restorePane)
+        restoreButton.isHidden = true
+        restoreButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(restoreButton)
+        restoreButtonWidth = restoreButton.widthAnchor.constraint(equalToConstant: 0)
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         addSubview(contentContainer)
         NSLayoutConstraint.activate([
             titleBarHost.topAnchor.constraint(equalTo: topAnchor),
             titleBarHost.leadingAnchor.constraint(equalTo: leadingAnchor),
-            titleBarHost.trailingAnchor.constraint(equalTo: trailingAnchor),
+            titleBarHost.trailingAnchor.constraint(equalTo: restoreButton.leadingAnchor),
+            restoreButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            restoreButton.topAnchor.constraint(equalTo: titleBarHost.topAnchor),
+            restoreButton.bottomAnchor.constraint(equalTo: titleBarHost.bottomAnchor),
+            restoreButtonWidth,
             titleBarHost.heightAnchor.constraint(equalToConstant: CanvasPaneTitleBarView.height),
             contentContainer.topAnchor.constraint(equalTo: titleBarHost.bottomAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -320,7 +350,7 @@ final class CanvasPaneView: NSView {
     /// drags and swallowed close clicks).
     override func hitTest(_ point: NSPoint) -> NSView? {
         let result = super.hitTest(point)
-        guard result != nil, result !== self else { return result }
+        guard result != nil, result !== self, result !== restoreButton else { return result }
         let local = convert(point, from: superview)
         if hitRegion(at: local) != nil {
             return self
