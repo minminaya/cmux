@@ -675783,6 +675783,65 @@
           }
         }
       }
+    },
+    "toolbar.spotlight.autoEnlarge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically Enlarge Focused Pane"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تكبير الجزء النشط تلقائيًا"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fokussierten Bereich automatisch vergrößern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ampliar automáticamente el panel enfocado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agrandir automatiquement le volet actif"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フォーカスしたペインを自動で拡大"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포커스된 패널 자동 확대"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦时自动放大窗格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聚焦時自動放大窗格"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

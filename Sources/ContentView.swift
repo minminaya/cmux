@@ -2168,6 +2168,8 @@ struct ContentView: View {
 
                     Spacer()
 
+                    PaneSpotlightToolbarButton()
+
                 }
                 .frame(height: titlebarContentHeight)
                 .padding(.top, 2)

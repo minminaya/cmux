@@ -1,3 +1,4 @@
+import CmuxSettingsUI
 import SwiftUI
 
 struct WorkspaceTitlebarModeLayer<Titlebar: View>: View {
@@ -14,5 +15,24 @@ struct WorkspaceTitlebarModeLayer<Titlebar: View>: View {
         if !isMinimalMode {
             titlebar()
         }
+    }
+}
+
+/// Window-titlebar control for the same preference shown in App settings.
+struct PaneSpotlightToolbarButton: View {
+    @LiveSetting(\.canvas.spotlightFocusOnly) private var focusOnly
+
+    var body: some View {
+        let label = String(localized: "toolbar.spotlight.autoEnlarge", defaultValue: "Automatically Enlarge Focused Pane")
+        Toggle(isOn: Binding(get: { !focusOnly }, set: { focusOnly = !$0 })) {
+            Image(systemName: "viewfinder")
+        }
+        .toggleStyle(.button)
+        .controlSize(.small)
+        .fixedSize()
+        .help(label)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("titlebarControl.autoEnlargePane")
+        .titlebarInteractiveControl()
     }
 }

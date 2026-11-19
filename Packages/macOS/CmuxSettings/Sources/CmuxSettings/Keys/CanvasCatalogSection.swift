@@ -27,7 +27,7 @@ public struct CanvasCatalogSection: SettingCatalogSection {
     /// Whether focusing a split pane keeps its original size.
     public let spotlightFocusOnly = DefaultsKey<Bool>(
         id: "canvas.spotlightFocusOnly",
-        defaultValue: false,
+        defaultValue: true,
         userDefaultsKey: "canvasSpotlightFocusOnly"
     )
 
