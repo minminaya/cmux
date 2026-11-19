@@ -24,9 +24,7 @@ struct PaneSpotlightToolbarButton: View {
 
     var body: some View {
         let label = String(localized: "toolbar.spotlight.autoEnlarge", defaultValue: "Automatically Enlarge Focused Pane")
-        Toggle(isOn: Binding(get: { !focusOnly }, set: { focusOnly = !$0 })) {
-            Image(systemName: "viewfinder")
-        }
+        Toggle(label, isOn: Binding(get: { !focusOnly }, set: { focusOnly = !$0 }))
         .toggleStyle(.button)
         .controlSize(.small)
         .fixedSize()
