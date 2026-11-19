@@ -230,6 +230,7 @@ public final class CanvasRootView: NSView {
         // to this workspace restores the exact spot.
         saveViewportToModel()
         spotlightExpansionFrame = nil
+        spotlightDismissAction = nil
         animatingSpotlightPaneID = nil
         let finishSpotlightRestore = spotlightRestore?.completion
         spotlightRestore = nil
@@ -278,6 +279,7 @@ public final class CanvasRootView: NSView {
     var isPresentingPaneSpotlight: Bool { spotlightPaneID != nil }
 
     var spotlightPaneID: UUID?
+    var spotlightDismissAction: (() -> Void)?
     var spotlightExpansionFrame: CGRect?
     var didPrepareSpotlightExpansion = false
     var animatingSpotlightPaneID: CanvasPaneID?
@@ -291,6 +293,7 @@ public final class CanvasRootView: NSView {
     ///   - action: Restores the host's original layout.
     public func configurePaneRestore(paneID: UUID?, label: String, action: @escaping () -> Void) {
         spotlightPaneID = paneID
+        spotlightDismissAction = paneID == nil ? nil : action
         for (id, paneView) in paneViews {
             let showsRestore = id.rawValue == paneID
             paneView.configureRestoreButton(

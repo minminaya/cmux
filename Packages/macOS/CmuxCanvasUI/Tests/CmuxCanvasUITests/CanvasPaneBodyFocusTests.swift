@@ -7,6 +7,25 @@ import CmuxCanvas
 @MainActor
 @Suite("Canvas pane body focus", .serialized)
 struct CanvasPaneBodyFocusTests {
+    @Test func onlyClicksOutsideTheSpotlightRequestRestore() throws {
+        let panelA = UUID()
+        let root = makeRoot(panelA: panelA, panelB: UUID()) { _ in }
+        attachToHost(root)
+        defer { root.teardown() }
+        let paneID = try #require(root.model.paneID(containing: panelA))
+        let pane = try #require(root.paneViews[paneID])
+        var restoreRequests = 0
+        root.configurePaneRestore(paneID: paneID.rawValue, label: "") { restoreRequests += 1 }
+
+        #expect(!root.dismissSpotlightIfOutsidePane(at: CGPoint(x: pane.frame.midX, y: pane.frame.midY)))
+        #expect(root.dismissSpotlightIfOutsidePane(at: CGPoint(x: pane.frame.maxX + 1, y: pane.frame.midY)))
+        #expect(restoreRequests == 1)
+
+        root.configurePaneRestore(paneID: nil, label: "") { restoreRequests += 1 }
+        #expect(!root.dismissSpotlight())
+        #expect(restoreRequests == 1)
+    }
+
     @Test func bodyMouseDownFocusPathRequestsFocusedPane() throws {
         let panelA = UUID()
         let panelB = UUID()

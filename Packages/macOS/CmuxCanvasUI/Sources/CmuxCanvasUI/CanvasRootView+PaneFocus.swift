@@ -3,16 +3,46 @@ import AppKit
 extension CanvasRootView {
     func installPaneBodyFocusMonitor() {
         guard paneBodyFocusMonitor == nil else { return }
-        paneBodyFocusMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+        paneBodyFocusMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .keyDown]) { [weak self] event in
             guard let self,
                   let window = self.window,
                   event.window === window else {
                 return event
             }
 
+            if event.type == .keyDown {
+                let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+                if window.isKeyWindow, event.keyCode == 53 /* Escape */, modifiers.isEmpty,
+                   self.dismissSpotlight() {
+                    return nil
+                }
+                return event
+            }
+
+            let location = self.documentView.convert(event.locationInWindow, from: nil)
+            if self.dismissSpotlightIfOutsidePane(at: location) {
+                // Background pane clicks restore the grid without delivering
+                // that same click to the newly restored terminal or browser.
+                let rootPoint = self.convert(event.locationInWindow, from: nil)
+                return self.bounds.contains(rootPoint) ? nil : event
+            }
             _ = self.focusPaneBody(for: event, in: window)
             return event
         }
+    }
+
+    @discardableResult
+    func dismissSpotlight() -> Bool {
+        guard isWorkspaceVisible, isPresentingPaneSpotlight, let spotlightDismissAction else { return false }
+        spotlightDismissAction()
+        return true
+    }
+
+    func dismissSpotlightIfOutsidePane(at documentPoint: CGPoint) -> Bool {
+        guard let spotlightPaneID,
+              let paneView = paneViews[CanvasPaneID(rawValue: spotlightPaneID)],
+              !paneView.frame.contains(documentPoint) else { return false }
+        return dismissSpotlight()
     }
 
     func removePaneBodyFocusMonitor() {
