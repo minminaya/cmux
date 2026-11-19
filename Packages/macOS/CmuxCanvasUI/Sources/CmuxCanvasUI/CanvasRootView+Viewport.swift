@@ -49,6 +49,11 @@ extension CanvasRootView: CanvasViewportControlling {
     ///   - completion: Called after the pane reaches its split position.
     public func animateSpotlightRestore(to frame: CGRect, completion: @escaping @MainActor () -> Void) {
         guard spotlightRestore == nil else { return }
+        if dragSession != nil {
+            dragSession = nil
+            guidesView.setGuides([])
+            releaseMinimapAfterInteraction()
+        }
         spotlightExpansionFrame = nil
         spotlightRestore = (frame, completion)
         if animatingSpotlightPaneID == nil {

@@ -10,8 +10,13 @@ extension CanvasRootView: CanvasPaneViewDelegate {
     }
 
     func paneView(_ view: CanvasPaneView, mouseDownAt documentPoint: CGPoint, region: CanvasPaneHitRegion) {
-        guard !isPresentingPaneSpotlight,
-              let frame = model.layout.frame(of: view.paneID)?.cgRect else { return }
+        guard !isPresentingPaneSpotlight || (
+            spotlightPaneID == view.paneID.rawValue &&
+            spotlightExpansionFrame == nil &&
+            animatingSpotlightPaneID == nil &&
+            spotlightRestore == nil
+        ) else { return }
+        guard let frame = model.layout.frame(of: view.paneID)?.cgRect else { return }
         dragSession = DragSession(
             paneID: view.paneID,
             region: region,
@@ -34,12 +39,20 @@ extension CanvasRootView: CanvasPaneViewDelegate {
         let dy = documentPoint.y - session.startPoint.y
         // Holding Command suspends snapping for free-form placement.
         let snapping = !modifiers.contains(.command)
+        let viewport = isPresentingPaneSpotlight
+            ? canvasRect(fromDocument: scrollView.contentView.documentVisibleRect)
+            : nil
 
         let result: CanvasSnapResult
         switch session.region {
         case .titleBar:
             let proposed = session.originalFrame.offsetBy(dx: dx, dy: dy)
-            result = model.snapForMove(proposed: proposed, movingPanelId: panelId, snapping: snapping)
+            result = model.snapForMove(
+                proposed: proposed,
+                movingPanelId: panelId,
+                snapping: snapping,
+                viewport: viewport
+            )
         case .resize(let edges):
             var proposed = session.originalFrame
             if edges.contains(.left) {
@@ -58,7 +71,8 @@ extension CanvasRootView: CanvasPaneViewDelegate {
                 proposed: proposed,
                 edges: edges,
                 panelId: panelId,
-                snapping: snapping
+                snapping: snapping,
+                viewport: viewport
             )
         }
 
@@ -77,7 +91,7 @@ extension CanvasRootView: CanvasPaneViewDelegate {
     /// join in `paneViewDidEndDrag`), highlight that target's tab-bar rect.
     /// Anything else (over empty canvas, multi-tab source) clears it.
     private func updateJoinHighlight(for session: DragSession, at documentPoint: CGPoint) {
-        guard case .titleBar = session.region,
+        guard !isPresentingPaneSpotlight, case .titleBar = session.region,
               model.layout.panelIds(in: session.paneID)?.count == 1,
               let target = joinTarget(at: documentPoint, excluding: session.paneID),
               let targetView = paneViews[target] else {
@@ -107,7 +121,8 @@ extension CanvasRootView: CanvasPaneViewDelegate {
 
         // Dropping a single-tab pane onto another pane's tab bar joins it as
         // a tab there (the canvas twin of bonsplit's tab drop).
-        if model.layout.panelIds(in: session.paneID)?.count == 1,
+        if !isPresentingPaneSpotlight,
+           model.layout.panelIds(in: session.paneID)?.count == 1,
            let target = joinTarget(at: session.lastPoint, excluding: session.paneID),
            let targetPanelId = model.layout.selectedPanelId(in: target)?.rawValue,
            model.joinPanel(panelId, withPaneContaining: targetPanelId) {

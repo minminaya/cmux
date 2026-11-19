@@ -12,6 +12,33 @@ struct CanvasModelTests {
         })
     }
 
+    @Test func draggingNearViewportCornerSnapsBothEdges() {
+        let model = makeModel()
+        let panel = UUID()
+        let viewport = CGRect(x: 40, y: 30, width: 800, height: 600)
+        let proposed = CGRect(x: 44, y: 36, width: 300, height: 220)
+        let moved = model.snapForMove(proposed: proposed, movingPanelId: panel, snapping: true, viewport: viewport)
+        let unsnapped = model.snapForMove(proposed: proposed, movingPanelId: panel, snapping: false, viewport: viewport)
+
+        #expect(moved.frame.cgRect == CGRect(x: 40, y: 30, width: 300, height: 220))
+        #expect(unsnapped.frame.cgRect == proposed)
+    }
+
+    @Test func resizingNearViewportEdgePreservesOppositeEdge() {
+        let model = makeModel()
+        let viewport = CGRect(x: 40, y: 30, width: 800, height: 600)
+        let proposed = CGRect(x: 100, y: 90, width: 735, height: 300)
+        let resized = model.snapForResize(
+            proposed: proposed,
+            edges: .right,
+            panelId: UUID(),
+            snapping: true,
+            viewport: viewport
+        )
+
+        #expect(resized.frame.cgRect == CGRect(x: 100, y: 90, width: 740, height: 300))
+    }
+
     @Test func syncAddsNewPanesAndReportsThem() {
         let model = makeModel()
         let a = UUID()

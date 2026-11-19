@@ -207,13 +207,17 @@ public final class CanvasModel {
 
     /// Snaps a frame being moved. Pure passthrough to the snap engine.
     ///
-    /// - Parameter snapping: Pass `false` (Command held) to suspend snapping;
-    ///   the proposed frame comes back unchanged.
-    func snapForMove(proposed: CGRect, movingPanelId: UUID, snapping: Bool) -> CanvasSnapResult {
+    /// In spotlight mode the viewport itself is an additional snap target.
+    func snapForMove(
+        proposed: CGRect,
+        movingPanelId: UUID,
+        snapping: Bool,
+        viewport: CGRect? = nil
+    ) -> CanvasSnapResult {
         let movingPane = paneID(containing: movingPanelId) ?? CanvasPaneID(rawValue: movingPanelId)
         return CanvasSnapEngine(metrics: gestureMetrics(snapping: snapping)).snapForMove(
             proposed: CanvasRect(proposed),
-            neighbors: layout.frames(excluding: movingPane)
+            neighbors: snapTargets(excluding: movingPane, viewport: viewport)
         )
     }
 
@@ -225,14 +229,21 @@ public final class CanvasModel {
         proposed: CGRect,
         edges: CanvasResizeEdges,
         panelId: UUID,
-        snapping: Bool
+        snapping: Bool,
+        viewport: CGRect? = nil
     ) -> CanvasSnapResult {
         let resizingPane = paneID(containing: panelId) ?? CanvasPaneID(rawValue: panelId)
         return CanvasSnapEngine(metrics: gestureMetrics(snapping: snapping)).snapForResize(
             proposed: CanvasRect(proposed),
             edges: edges,
-            neighbors: layout.frames(excluding: resizingPane)
+            neighbors: snapTargets(excluding: resizingPane, viewport: viewport)
         )
+    }
+
+    private func snapTargets(excluding pane: CanvasPaneID, viewport: CGRect?) -> [CanvasRect] {
+        let neighbors = layout.frames(excluding: pane)
+        guard let viewport, !viewport.isEmpty else { return neighbors }
+        return [CanvasRect(viewport)] + neighbors
     }
 
     /// One persisted pane: identity, frame, ordered tabs, selection.
