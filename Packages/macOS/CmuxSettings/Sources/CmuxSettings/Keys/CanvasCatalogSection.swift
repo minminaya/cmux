@@ -24,7 +24,7 @@ public struct CanvasCatalogSection: SettingCatalogSection {
         userDefaultsKey: "canvasSnappingEnabled"
     )
 
-    /// Whether the floating-pane button focuses the selected pane without enlarging it.
+    /// Whether focusing a split pane keeps its original size.
     public let spotlightFocusOnly = DefaultsKey<Bool>(
         id: "canvas.spotlightFocusOnly",
         defaultValue: false,

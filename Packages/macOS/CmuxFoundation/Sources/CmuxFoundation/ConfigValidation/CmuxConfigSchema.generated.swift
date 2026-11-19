@@ -2443,7 +2443,7 @@ enum CmuxEmbeddedConfigSchema {
         "spotlightFocusOnly": {
           "type": "boolean",
           "default": false,
-          "description": "Focus the pane from its title bar button without enlarging it."
+          "description": "Keep the split layout when focusing a pane."
         },
         "spotlightWidth": {
           "type": "integer",

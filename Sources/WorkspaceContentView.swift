@@ -363,7 +363,9 @@ struct WorkspaceContentView: View {
                         onTriggerFlash: { workspace.triggerDebugFlash(panelId: panel.id) }
                     )
                     .onTapGesture {
+                        guard isWorkspaceInputActive else { return }
                         workspace.bonsplitController.focusPane(paneId)
+                        workspace.spotlightAfterExplicitPaneFocus(paneId)
                     }
                 }
             } else if workspace.cloudVMID != nil {

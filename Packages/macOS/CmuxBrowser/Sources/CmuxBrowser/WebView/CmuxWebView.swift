@@ -20,6 +20,9 @@ public final class CmuxWebView: CmuxUndoableWebView {
 
     /// Posted when a pointer click reaches a `CmuxWebView`.
     public nonisolated static let didReceiveClickNotification = Notification.Name("webViewDidReceiveClick")
+    /// Posted after a plain click finishes without dragging.
+    public nonisolated static let didCompletePaneClickNotification = Notification.Name("webViewDidCompletePaneClick")
+    private var tracksPaneClick = false
 
     /// `userInfo` key of ``didBecomeFirstResponderNotification``: whether a
     /// pointer event initiated the focus change.
@@ -1024,6 +1027,8 @@ public final class CmuxWebView: CmuxUndoableWebView {
     // NSView (WKWebView), not to sibling SwiftUI overlays. Notify the panel system so
     // bonsplit focus tracks which pane the user clicked in.
     public override func mouseDown(with event: NSEvent) {
+        tracksPaneClick = !browserNativeInputDeliveryOwner.isDispatchActive && event.clickCount == 1
+            && event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty
         if !browserNativeInputDeliveryOwner.isDispatchActive { onPhysicalUserInteraction?() }
         if diffViewerDocumentState.documentConfirmed {
             diffViewerDocumentState.invalidateFocusConfirmation()
@@ -1048,6 +1053,20 @@ public final class CmuxWebView: CmuxUndoableWebView {
         automationContextMenuSuppression.noteUserMouseDown(event)
         performBrowserClickFocusHandoff {
             super.mouseDown(with: event)
+        }
+    }
+
+    public override func mouseDragged(with event: NSEvent) {
+        tracksPaneClick = false
+        super.mouseDragged(with: event)
+    }
+
+    public override func mouseUp(with event: NSEvent) {
+        let clicked = tracksPaneClick && bounds.contains(convert(event.locationInWindow, from: nil))
+        tracksPaneClick = false
+        super.mouseUp(with: event)
+        if clicked {
+            NotificationCenter.default.post(name: Self.didCompletePaneClickNotification, object: self)
         }
     }
 

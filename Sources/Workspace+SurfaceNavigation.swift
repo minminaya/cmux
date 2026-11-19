@@ -42,6 +42,9 @@ extension Workspace {
         if let paneId = bonsplitController.focusedPaneId,
            let tabId = bonsplitController.selectedTab(inPane: paneId)?.id {
             applyTabSelection(tabId: tabId, inPane: paneId)
+            if paneId != previousFocusedPaneId {
+                spotlightAfterExplicitPaneFocus(paneId)
+            }
         }
         return previousFocusedPanelId != focusedPanelId ||
             previousFocusedPaneId != bonsplitController.focusedPaneId
@@ -300,6 +303,7 @@ extension Workspace {
         if let paneId = bonsplitController.focusedPaneId,
            let tabId = bonsplitController.selectedTab(inPane: paneId)?.id {
             applyTabSelection(tabId: tabId, inPane: paneId)
+            spotlightAfterExplicitPaneFocus(paneId)
         }
     }
 

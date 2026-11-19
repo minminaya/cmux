@@ -675672,55 +675672,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use the pane’s title bar button to focus it without changing the split layout."
+            "value": "Keep the split layout when clicking a pane or moving focus to it."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "استخدم زر شريط عنوان الجزء للتركيز عليه مع إبقاء التخطيط المقسّم كما هو."
+            "value": "أبقِ التخطيط المقسّم كما هو عند النقر على جزء أو نقل التركيز إليه."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Schaltfläche in der Titelleiste fokussiert den Bereich, ohne das geteilte Layout zu ändern."
+            "value": "Behält das geteilte Layout bei, wenn ein Bereich angeklickt oder fokussiert wird."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usa el botón de la barra de título para enfocar el panel sin cambiar la disposición dividida."
+            "value": "Mantiene la disposición dividida al hacer clic en un panel o mover el foco a él."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le bouton dans la barre de titre active le volet sans modifier la disposition des volets."
+            "value": "Conserve la disposition lorsque vous cliquez sur un volet ou que vous lui donnez le focus."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ペインのタイトルバーのボタンで、分割レイアウトを保ったままフォーカスを移します。"
+            "value": "ペインをクリックしたりフォーカスを移したりしても、分割レイアウトを維持します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "패널 제목 표시줄의 버튼을 눌러 분할 레이아웃을 유지하면서 포커스를 이동합니다."
+            "value": "패널을 클릭하거나 패널로 포커스를 이동해도 분할 레이아웃을 유지합니다."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点击窗格标题栏按钮时，仅切换输入焦点，保持原有分屏布局。"
+            "value": "点击窗格或切换焦点时，保持原有的分屏布局。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "點擊窗格標題列按鈕時，只切換焦點並保留原本的分割版面。"
+            "value": "點擊窗格或切換焦點時，保持原本的分割版面。"
           }
         }
       }

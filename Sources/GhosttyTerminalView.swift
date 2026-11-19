@@ -8754,6 +8754,13 @@ class GhosttyNSView: NSView, NSUserInterfaceValidations {
             linkActivationAuthorized: linkActivationAuthorized
         )
         _ = finishGhosttyMouseSession(pendingSession)
+        if !codexActionHandled, completion?.isDrag == false, event.clickCount == 1,
+           releaseFlags.intersection([.command, .control, .option, .shift]).isEmpty,
+           bounds.contains(point), let terminalSurface,
+           let workspace = terminalSurface.owningWorkspace(),
+           let pane = workspace.paneId(forPanelId: terminalSurface.id) {
+            workspace.spotlightAfterExplicitPaneFocus(pane)
+        }
         return true
     }
 

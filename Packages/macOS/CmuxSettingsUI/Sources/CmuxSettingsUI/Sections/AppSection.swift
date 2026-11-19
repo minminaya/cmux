@@ -552,7 +552,7 @@ public struct AppSection: View {
             SettingsCardRow(
                 configurationReview: .json("canvas.spotlightFocusOnly"),
                 String(localized: "settings.app.spotlightFocusOnly", defaultValue: "Focus Pane Without Enlarging"),
-                subtitle: String(localized: "settings.app.spotlightFocusOnly.subtitle", defaultValue: "Use the pane’s title bar button to focus it without changing the split layout.")
+                subtitle: String(localized: "settings.app.spotlightFocusOnly.subtitle", defaultValue: "Keep the split layout when clicking a pane or moving focus to it.")
             ) {
                 Toggle("", isOn: Binding(get: { spotlightFocusOnly.current }, set: { spotlightFocusOnly.set($0) }))
                     .labelsHidden()

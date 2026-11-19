@@ -91,6 +91,19 @@ extension Workspace {
         )
     }
 
+    /// Enlarges a pane after an explicit click or navigation command completes.
+    func spotlightAfterExplicitPaneFocus(_ pane: PaneID) {
+        guard layoutMode == .splits, bonsplitController.allPaneIds.count > 1,
+              !CanvasCatalogSection().spotlightFocusOnly.value(in: .standard) else { return }
+        Task { @MainActor [weak self] in
+            guard let self, self.layoutMode == .splits,
+                  self.owningTabManager?.selectedWorkspace === self,
+                  self.bonsplitController.focusedPaneId == pane,
+                  !CanvasCatalogSection().spotlightFocusOnly.value(in: .standard) else { return }
+            self.enterPaneSpotlight(in: pane)
+        }
+    }
+
     /// Presents the split layout on a temporary canvas while a pane is enlarged.
     func enterPaneSpotlight(in pane: PaneID) {
         guard layoutMode == .splits, bonsplitController.zoomedPaneId == nil,
