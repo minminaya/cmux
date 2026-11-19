@@ -41,6 +41,7 @@ public struct AppSection: View {
     @State private var markdownFontFamily: DefaultsValueModel<String>
     @State private var markdownMaxWidth: DefaultsValueModel<Int>
     @State private var canvasPaneGap: DefaultsValueModel<Int>
+    @State private var spotlightFocusOnly: DefaultsValueModel<Bool>
     @State private var spotlightWidth: DefaultsValueModel<Int>
     @State private var spotlightHeight: DefaultsValueModel<Int>
     @State private var spotlightHorizontalPosition: DefaultsValueModel<Int>
@@ -121,6 +122,7 @@ public struct AppSection: View {
         _markdownFontFamily = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.fontFamily))
         _markdownMaxWidth = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.maxWidth))
         _canvasPaneGap = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.paneGap))
+        _spotlightFocusOnly = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightFocusOnly))
         _spotlightWidth = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightWidth))
         _spotlightHeight = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightHeight))
         _spotlightHorizontalPosition = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.canvas.spotlightHorizontalPosition))
@@ -186,7 +188,7 @@ public struct AppSection: View {
             mainCard
         }
         .task {
-            startSettingsObservation([language, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, focusHistoryIncludesPanesAndTabs, equalizeSplitsOnCreate, equalizeSplitsOnDividerDoubleClick, fileDrop, preferredEditor, openSupported, openMarkdown, globalFontMagnification, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, spotlightWidth, spotlightHeight, spotlightHorizontalPosition, spotlightVerticalPosition, fileEditorWordWrap, fileEditorSyntaxHighlighting, fileEditorLineNumbers, fileEditorIndentGuides, fileEditorCurrentLineHighlight, fileEditorTabWidth, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, paneFlashDoubleBlink, paneFlashOnTyping, paneFlashThemeColor, desktopNotifications, agentPermissionPrompt, agentTurnComplete, agentIdleReminder, soundName, soundWhenFocused, soundCommand, customSoundFile, soundOverrides, telemetry, confirmQuit, warnCloseTab, warnCloseAgentSession, warnCloseX, warnCloseWorkspace, alwaysConfirmCloseWorkspace, warnCloseWindow, hideCloseButton, renameSelects, paletteAllSurfaces])
+            startSettingsObservation([language, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, focusHistoryIncludesPanesAndTabs, equalizeSplitsOnCreate, equalizeSplitsOnDividerDoubleClick, fileDrop, preferredEditor, openSupported, openMarkdown, globalFontMagnification, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, spotlightFocusOnly, spotlightWidth, spotlightHeight, spotlightHorizontalPosition, spotlightVerticalPosition, fileEditorWordWrap, fileEditorSyntaxHighlighting, fileEditorLineNumbers, fileEditorIndentGuides, fileEditorCurrentLineHighlight, fileEditorTabWidth, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, paneFlashDoubleBlink, paneFlashOnTyping, paneFlashThemeColor, desktopNotifications, agentPermissionPrompt, agentTurnComplete, agentIdleReminder, soundName, soundWhenFocused, soundCommand, customSoundFile, soundOverrides, telemetry, confirmQuit, warnCloseTab, warnCloseAgentSession, warnCloseX, warnCloseWorkspace, alwaysConfirmCloseWorkspace, warnCloseWindow, hideCloseButton, renameSelects, paletteAllSurfaces])
             await soundAgentCache.loadIfNeeded { await hostActions.notificationSoundAgentOptions() }
             if languageAtAppear == nil { languageAtAppear = language.current }; if telemetryAtAppear == nil { telemetryAtAppear = telemetry.current }
         }
@@ -544,6 +546,18 @@ public struct AppSection: View {
                     .labelsHidden()
                     .controlSize(.small)
                     .accessibilityIdentifier("SettingsCanvasSnappingToggle")
+            }
+            SettingsCardDivider()
+
+            SettingsCardRow(
+                configurationReview: .json("canvas.spotlightFocusOnly"),
+                String(localized: "settings.app.spotlightFocusOnly", defaultValue: "Focus Pane Without Enlarging"),
+                subtitle: String(localized: "settings.app.spotlightFocusOnly.subtitle", defaultValue: "Use the pane’s title bar button to focus it without changing the split layout.")
+            ) {
+                Toggle("", isOn: Binding(get: { spotlightFocusOnly.current }, set: { spotlightFocusOnly.set($0) }))
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .accessibilityIdentifier("SettingsSpotlightFocusOnlyToggle")
             }
             SettingsCardDivider()
 

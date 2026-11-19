@@ -3,6 +3,7 @@ import AppKit
 import Bonsplit
 import CmuxCanvas
 import CmuxCanvasUI
+import CmuxSettings
 
 extension Notification.Name {
     /// Posted (object = the `Workspace`) whenever its `layoutMode` changes,
@@ -85,7 +86,7 @@ extension Workspace {
         BonsplitConfiguration.SplitActionButton(
             id: paneSpotlightButtonID,
             icon: .systemImage("arrow.up.left.and.arrow.down.right"),
-            tooltip: String(localized: "pane.spotlight.expand", defaultValue: "Enlarge Pane"),
+            tooltip: String(localized: "pane.spotlight.focus", defaultValue: "Focus Pane"),
             action: .custom(paneSpotlightButtonID)
         )
     }
@@ -95,6 +96,11 @@ extension Workspace {
         guard layoutMode == .splits, bonsplitController.zoomedPaneId == nil,
               let tab = bonsplitController.selectedTabId(inPane: pane),
               let panelID = panelIdFromSurfaceId(tab) else { return }
+
+        if CanvasCatalogSection().spotlightFocusOnly.value(in: .standard) {
+            focusPanel(panelID)
+            return
+        }
 
         let snapshot = bonsplitController.layoutSnapshot()
         let container = snapshot.containerFrame

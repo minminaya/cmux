@@ -225,6 +225,7 @@ extension CmuxSettingsFileStore {
         "customSidebars.renderer",
         "canvas.paneGap",
         "canvas.snappingEnabled",
+        "canvas.spotlightFocusOnly",
         "canvas.spotlightWidth",
         "canvas.spotlightHeight",
         "canvas.spotlightHorizontalPosition",

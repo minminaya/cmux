@@ -328,6 +328,11 @@ extension CmuxSettingsFileStore {
         snapshot: inout ResolvedSettingsSnapshot
     ) {
         let canvas = CanvasCatalogSection()
+        if let focusOnly = jsonBool(section["spotlightFocusOnly"]) {
+            snapshot.managedUserDefaults[canvas.spotlightFocusOnly.userDefaultsKey] = .bool(focusOnly)
+        } else if section.keys.contains("spotlightFocusOnly") {
+            logInvalid(canvas.spotlightFocusOnly.id, sourcePath: sourcePath)
+        }
         let size = CanvasCatalogSection.spotlightSizeRange
         let position = CanvasCatalogSection.spotlightPositionRange
         for (name, key, range) in [

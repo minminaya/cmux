@@ -145,6 +145,13 @@ extension Array where Element == CuratedSettingEntry {
             ),
             .init(
                 section: .app,
+                id: "pane-spotlight-focus-only",
+                title: String(localized: "settings.app.spotlightFocusOnly", defaultValue: "Focus Pane Without Enlarging"),
+                paths: ["canvas.spotlightFocusOnly"],
+                synonyms: "canvas.spotlightFocusOnly floating pane focus enlarge split"
+            ),
+            .init(
+                section: .app,
                 id: "pane-spotlight-width",
                 title: String(localized: "settings.app.spotlightWidth", defaultValue: "Floating Pane Width"),
                 paths: ["canvas.spotlightWidth"],

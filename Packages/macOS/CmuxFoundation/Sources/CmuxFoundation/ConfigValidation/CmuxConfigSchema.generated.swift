@@ -2440,6 +2440,11 @@ enum CmuxEmbeddedConfigSchema {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "spotlightFocusOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Focus the pane from its title bar button without enlarging it."
+        },
         "spotlightWidth": {
           "type": "integer",
           "minimum": 20,
