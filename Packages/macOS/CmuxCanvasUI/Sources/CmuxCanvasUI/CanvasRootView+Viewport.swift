@@ -13,22 +13,16 @@ extension CanvasRootView: CanvasViewportControlling {
         applyZOrder()
         recomputeDocumentGeometry()
         if shouldAnimate(animated) {
-            onMotionAnimationStarted?(Self.paneFrameAnimationDuration)
-            NSAnimationContext.runAnimationGroup({ context in
-                context.duration = Self.paneFrameAnimationDuration
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                context.allowsImplicitAnimation = true
-                for (paneID, paneView) in paneViews {
-                    if let frame = model.layout.frame(of: paneID)?.cgRect {
-                        paneView.animator().frame = documentRect(fromCanvas: frame)
+            animatePaneFrames {
+                for (paneID, paneView) in self.paneViews {
+                    if let frame = self.model.layout.frame(of: paneID)?.cgRect {
+                        paneView.animator().frame = self.documentRect(fromCanvas: frame)
                     }
                 }
-            }, completionHandler: { [weak self] in
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    self.callbacks.onViewportGeometryChanged(self.window)
-                }
-            })
+            } completion: { [weak self] in
+                guard let self else { return }
+                self.callbacks.onViewportGeometryChanged(self.window)
+            }
         } else {
             applyAllPaneFrames()
         }
@@ -36,6 +30,101 @@ extension CanvasRootView: CanvasViewportControlling {
         updateMinimap()
         callbacks.onLayoutChanged()
         callbacks.onViewportGeometryChanged(window)
+    }
+
+    /// Schedules enlargement after the split-sized canvas and its viewport have been laid out.
+    ///
+    /// - Parameter frame: The enlarged pane's destination in canvas coordinates.
+    public func prepareSpotlightExpansion(to frame: CGRect) {
+        guard !didPrepareSpotlightExpansion else { return }
+        didPrepareSpotlightExpansion = true
+        spotlightExpansionFrame = frame
+        needsLayout = true
+    }
+
+    /// Animates the enlarged pane back to its split position.
+    ///
+    /// - Parameters:
+    ///   - frame: The original pane frame in canvas coordinates.
+    ///   - completion: Called after the pane reaches its split position.
+    public func animateSpotlightRestore(to frame: CGRect, completion: @escaping @MainActor () -> Void) {
+        guard spotlightRestore == nil else { return }
+        spotlightExpansionFrame = nil
+        spotlightRestore = (frame, completion)
+        if animatingSpotlightPaneID == nil {
+            startSpotlightRestore()
+        }
+    }
+
+    private func startSpotlightRestore() {
+        guard let restore = spotlightRestore else { return }
+        moveSpotlightPane(to: restore.frame) { [weak self] in
+            guard let self else { return }
+            self.spotlightRestore = nil
+            restore.completion()
+        }
+    }
+
+    func startPreparedSpotlightExpansion() {
+        guard let frame = spotlightExpansionFrame else { return }
+        spotlightExpansionFrame = nil
+        moveSpotlightPane(to: frame) { [weak self] in
+            self?.startSpotlightRestore()
+        }
+    }
+
+    private func moveSpotlightPane(to frame: CGRect, completion: @escaping @MainActor () -> Void) {
+        guard let spotlightPaneID else {
+            completion()
+            return
+        }
+        let paneID = CanvasPaneID(rawValue: spotlightPaneID)
+        guard let paneView = paneViews[paneID],
+              let panelID = model.layout.selectedPanelId(in: paneID)?.rawValue,
+              model.frame(of: panelID) != frame else {
+            completion()
+            return
+        }
+
+        let startFrame = canvasRect(fromDocument: paneView.frame)
+        model.setFrame(frame, for: panelID)
+        recomputeDocumentGeometry()
+        if shouldAnimate(isWorkspaceVisible && window != nil) {
+            animatingSpotlightPaneID = paneID
+            paneView.frame = documentRect(fromCanvas: startFrame)
+            animatePaneFrames {
+                paneView.animator().frame = self.documentRect(fromCanvas: frame)
+            } completion: { [weak self] in
+                guard let self, self.animatingSpotlightPaneID == paneID else { return }
+                self.animatingSpotlightPaneID = nil
+                self.applyAllPaneFrames()
+                self.updateLifecycle()
+                self.updateMinimap()
+                self.callbacks.onViewportGeometryChanged(self.window)
+                completion()
+            }
+        } else {
+            applyAllPaneFrames()
+            updateLifecycle()
+            updateMinimap()
+            callbacks.onViewportGeometryChanged(window)
+            completion()
+        }
+    }
+
+    private func animatePaneFrames(
+        _ updates: () -> Void,
+        completion: @escaping @MainActor () -> Void
+    ) {
+        onMotionAnimationStarted?(Self.paneFrameAnimationDuration)
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Self.paneFrameAnimationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            context.allowsImplicitAnimation = true
+            updates()
+        }, completionHandler: {
+            Task { @MainActor in completion() }
+        })
     }
 
     public func revealPane(_ panelId: UUID, animated: Bool) {

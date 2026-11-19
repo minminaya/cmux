@@ -27,6 +27,7 @@ extension Workspace {
         }
         if mode == .splits {
             spotlightPaneID = nil
+            spotlightFrames = nil
             spotlightCanvasModel = nil
         }
         layoutMode = mode
@@ -58,7 +59,24 @@ extension Workspace {
 
     /// Toggles between split and canvas layout.
     func toggleCanvasLayout() {
-        setLayoutMode(layoutMode == .canvas ? .splits : .canvas)
+        if spotlightPaneID != nil {
+            restorePaneSpotlight()
+        } else {
+            setLayoutMode(layoutMode == .canvas ? .splits : .canvas)
+        }
+    }
+
+    func restorePaneSpotlight() {
+        guard let frames = spotlightFrames,
+              let model = spotlightCanvasModel,
+              let canvas = model.viewport as? CanvasRootView else {
+            setLayoutMode(.splits)
+            return
+        }
+        canvas.animateSpotlightRestore(to: frames.original) { [weak self, weak model] in
+            guard let self, let model, self.spotlightCanvasModel === model else { return }
+            self.setLayoutMode(.splits)
+        }
     }
 
     static let paneSpotlightButtonID = "cmux.pane.spotlight"
@@ -95,7 +113,8 @@ extension Workspace {
                 selectedPanelId: selected
             )
         }
-        guard panes.count > 1, panes.contains(where: { $0.paneId == pane.id }) else { return }
+        guard panes.count > 1,
+              let originalFrame = panes.first(where: { $0.paneId == pane.id })?.frame else { return }
 
         let model = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
         model.restorePanes(panes)
@@ -103,11 +122,11 @@ extension Workspace {
         let enlargedFrame = CanvasLayoutSettings.spotlightFrame(
             in: CGSize(width: container.width, height: container.height)
         )
-        model.setFrame(enlargedFrame, for: panelID)
         model.bringToFront(panelID)
         model.savedViewport = (canvasCenter: center, magnification: 1)
         spotlightCanvasModel = model
         spotlightPaneID = pane.id
+        spotlightFrames = (original: originalFrame, enlarged: enlargedFrame)
         setLayoutMode(.canvas)
         focusPanel(panelID)
     }

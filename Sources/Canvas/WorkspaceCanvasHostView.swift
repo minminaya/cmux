@@ -319,7 +319,10 @@ private struct CanvasRootRepresentable: NSViewRepresentable {
             paneID: workspace.spotlightPaneID,
             label: String(localized: "pane.spotlight.restore", defaultValue: "Restore Split Layout")
         ) { [weak workspace] in
-            workspace?.setLayoutMode(.splits)
+            workspace?.restorePaneSpotlight()
+        }
+        if let frame = workspace.spotlightFrames?.enlarged {
+            nsView.prepareSpotlightExpansion(to: frame)
         }
     }
 

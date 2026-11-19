@@ -219,6 +219,7 @@ public final class CanvasRootView: NSView {
             installCommandScrollMonitor()
             installPaneBodyFocusMonitor()
             syncMinimapOverlayHost()
+            if spotlightExpansionFrame != nil { needsLayout = true }
         }
     }
 
@@ -228,6 +229,13 @@ public final class CanvasRootView: NSView {
         // Capture the final viewport before the view goes away so returning
         // to this workspace restores the exact spot.
         saveViewportToModel()
+        spotlightExpansionFrame = nil
+        animatingSpotlightPaneID = nil
+        let finishSpotlightRestore = spotlightRestore?.completion
+        spotlightRestore = nil
+        if let finishSpotlightRestore {
+            Task { @MainActor in finishSpotlightRestore() }
+        }
         for (_, mount) in mounts {
             mount.unmount()
         }
@@ -269,7 +277,11 @@ public final class CanvasRootView: NSView {
     /// Whether the host temporarily presents a fixed split layout.
     var isPresentingPaneSpotlight: Bool { spotlightPaneID != nil }
 
-    private var spotlightPaneID: UUID?
+    var spotlightPaneID: UUID?
+    var spotlightExpansionFrame: CGRect?
+    var didPrepareSpotlightExpansion = false
+    var animatingSpotlightPaneID: CanvasPaneID?
+    var spotlightRestore: (frame: CGRect, completion: @MainActor () -> Void)?
 
     /// Configures the restore control on a temporarily enlarged pane.
     ///
@@ -443,7 +455,7 @@ public final class CanvasRootView: NSView {
 
     func applyAllPaneFrames() {
         for (paneID, paneView) in paneViews {
-            guard dragSession?.paneID != paneID else { continue }
+            guard dragSession?.paneID != paneID, animatingSpotlightPaneID != paneID else { continue }
             if let frame = model.layout.frame(of: paneID)?.cgRect {
                 paneView.frame = documentRect(fromCanvas: frame)
             }
@@ -550,6 +562,10 @@ public final class CanvasRootView: NSView {
         updateLifecycle()
         updateMinimap()
         callbacks.onViewportGeometryChanged(window)
+        if window != nil, pendingViewportRestore == nil,
+           scrollView.contentSize.width > 1, scrollView.contentSize.height > 1 {
+            startPreparedSpotlightExpansion()
+        }
     }
 
     /// Explicit pane lifecycle: panes within the visible rect (plus margin)

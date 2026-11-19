@@ -3026,6 +3026,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
     let savedCanvasModel = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
     var spotlightCanvasModel: CanvasModel?
     var spotlightPaneID: UUID?
+    var spotlightFrames: (original: CGRect, enlarged: CGRect)?
     var canvasModel: CanvasModel { spotlightCanvasModel ?? savedCanvasModel }
     private struct SurfaceTabBarExecutableButton {
         let button: CmuxSurfaceTabBarButton

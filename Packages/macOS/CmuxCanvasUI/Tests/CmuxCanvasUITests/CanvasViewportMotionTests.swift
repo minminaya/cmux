@@ -106,6 +106,32 @@ struct CanvasViewportMotionTests {
         #expect(animations == [CanvasRootView.paneFrameAnimationDuration])
     }
 
+    @Test(arguments: [false, true])
+    func spotlightExpansionRespectsReduceMotion(reduceMotion: Bool) throws {
+        let panel = UUID()
+        let root = makeRoot(panels: [panel], focused: panel)
+        let window = NSWindow(
+            contentRect: root.bounds,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = root
+        defer { root.teardown() }
+
+        root.shouldReduceMotion = { reduceMotion }
+        var animations: [TimeInterval] = []
+        root.onMotionAnimationStarted = { animations.append($0) }
+        root.configurePaneRestore(paneID: panel, label: "") {}
+        let enlarged = CGRect(x: 40, y: 30, width: 700, height: 440)
+
+        root.prepareSpotlightExpansion(to: enlarged)
+        root.layoutSubtreeIfNeeded()
+
+        #expect(root.model.frame(of: panel) == enlarged)
+        #expect(animations == (reduceMotion ? [] : [CanvasRootView.paneFrameAnimationDuration]))
+    }
+
     @Test func reduceMotionTogglesOverviewImmediately() throws {
         let panelA = UUID()
         let panelB = UUID()
