@@ -1,4 +1,5 @@
 import AppKit
+import CmuxCanvas
 
 extension CanvasRootView {
     func installPaneBodyFocusMonitor() {
