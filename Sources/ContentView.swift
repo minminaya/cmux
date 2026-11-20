@@ -2168,6 +2168,9 @@ struct ContentView: View {
 
                     Spacer()
 
+                    if let workspace = tabManager.selectedWorkspace {
+                        PaneSpotlightPresetsMenu(workspace: workspace)
+                    }
                     PaneSpotlightToolbarButton()
 
                 }

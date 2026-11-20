@@ -68,6 +68,7 @@ extension Workspace {
     }
 
     func restorePaneSpotlight() {
+        rememberSpotlightPresetFrame()
         guard let frames = spotlightFrames,
               let model = spotlightCanvasModel,
               let canvas = model.viewport as? CanvasRootView else {
@@ -78,6 +79,61 @@ extension Workspace {
             guard let self, let model, self.spotlightCanvasModel === model else { return }
             self.setLayoutMode(.splits)
         }
+    }
+
+    func switchSpotlightPreset(to preset: SpotlightPresets.Kind) {
+        guard bonsplitController.allPaneIds.count > 1,
+              spotlightPaneID != nil || layoutMode == .splits,
+              bonsplitController.zoomedPaneId == nil else { return }
+        let source = spotlightPresets.active ?? .grid
+        if preset == source, (spotlightPaneID != nil) == (preset == .focus) { return }
+
+        let tree = bonsplitController.treeSnapshot()
+        rememberSpotlightPresetFrame(in: source)
+        spotlightPresets.saveDividers(from: tree, in: source)
+        spotlightPresets.active = preset
+        for position in spotlightPresets.dividers(for: preset, matching: tree) {
+            bonsplitController.setDividerPosition(position.value, forSplit: position.id)
+        }
+
+        if spotlightPaneID != nil {
+            // Rebuild the temporary canvas from the newly applied split ratios.
+            setLayoutMode(.splits)
+        }
+        if preset == .focus, let pane = bonsplitController.focusedPaneId {
+            enterPaneSpotlight(in: pane)
+        }
+    }
+
+    private func spotlightPresetFrame(in size: CGSize) -> CGRect? {
+        guard let preset = spotlightPresets.active else { return nil }
+        return spotlightPresets.frames[preset]?.frame(in: size)
+    }
+
+    private var currentSpotlightPresetFrame: SpotlightPresets.Frame? {
+        guard let paneID = spotlightPaneID,
+              let original = spotlightFrames?.original,
+              let model = spotlightCanvasModel,
+              let panelID = model.layout.selectedPanelId(in: CanvasPaneID(rawValue: paneID))?.rawValue,
+              let frame = model.frame(of: panelID), frame != original else { return nil }
+        let container = bonsplitController.layoutSnapshot().containerFrame
+        return SpotlightPresets.Frame(frame, in: CGSize(width: container.width, height: container.height))
+    }
+
+    private func rememberSpotlightPresetFrame(in preset: SpotlightPresets.Kind? = nil) {
+        guard let preset = preset ?? spotlightPresets.active,
+              let frame = currentSpotlightPresetFrame else { return }
+        spotlightPresets.frames[preset] = frame
+    }
+
+    func spotlightPresetsForSession() -> SpotlightPresets? {
+        guard let active = spotlightPresets.active else { return nil }
+        var snapshot = spotlightPresets
+        snapshot.saveDividers(from: bonsplitController.treeSnapshot(), in: active)
+        if let frame = currentSpotlightPresetFrame {
+            snapshot.frames[active] = frame
+        }
+        return snapshot
     }
 
     static let paneSpotlightButtonID = "cmux.pane.spotlight"
@@ -92,16 +148,22 @@ extension Workspace {
     }
 
     /// Enlarges a pane after an explicit click or navigation command completes.
-    func spotlightAfterExplicitPaneFocus(_ pane: PaneID) {
+    func spotlightAfterExplicitPaneFocus(_ pane: PaneID, clickCount: Int = 1) {
         guard layoutMode == .splits, bonsplitController.allPaneIds.count > 1,
-              !CanvasCatalogSection().spotlightFocusOnly.value(in: .standard) else { return }
+              spotlightAcceptsClickCount(clickCount) else { return }
         Task { @MainActor [weak self] in
             guard let self, self.layoutMode == .splits,
                   self.owningTabManager?.selectedWorkspace === self,
                   self.bonsplitController.focusedPaneId == pane,
-                  !CanvasCatalogSection().spotlightFocusOnly.value(in: .standard) else { return }
+                  self.spotlightAcceptsClickCount(clickCount) else { return }
             self.enterPaneSpotlight(in: pane)
         }
+    }
+
+    private func spotlightAcceptsClickCount(_ clickCount: Int) -> Bool {
+        CanvasCatalogSection().spotlightFocusOnly.value(in: .standard)
+            ? clickCount == 2
+            : clickCount == 1
     }
 
     /// Presents the split layout on a temporary canvas while a pane is enlarged.
@@ -133,9 +195,8 @@ extension Workspace {
         let model = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
         model.restorePanes(panes)
         let center = CGPoint(x: container.width / 2, y: container.height / 2)
-        let enlargedFrame = CanvasLayoutSettings.spotlightFrame(
-            in: CGSize(width: container.width, height: container.height)
-        )
+        let size = CGSize(width: container.width, height: container.height)
+        let enlargedFrame = spotlightPresetFrame(in: size) ?? CanvasLayoutSettings.spotlightFrame(in: size)
         model.bringToFront(panelID)
         model.savedViewport = (canvasCenter: center, magnification: 1)
         spotlightCanvasModel = model
@@ -143,6 +204,33 @@ extension Workspace {
         spotlightFrames = (original: originalFrame, enlarged: enlargedFrame)
         setLayoutMode(.canvas)
         focusPanel(panelID)
+    }
+
+    /// Finds the neighbor in the original split geometry while keeping the floating frame.
+    func moveSpotlightFocus(direction: NavigationDirection) -> Bool {
+        guard let model = spotlightCanvasModel,
+              let currentID = spotlightPaneID,
+              let frames = spotlightFrames,
+              let canvas = model.viewport as? CanvasRootView else { return false }
+        let current = CanvasPaneID(rawValue: currentID)
+        var splitLayout = model.layout
+        splitLayout.setFrame(
+            CanvasRect(x: frames.original.minX, y: frames.original.minY,
+                       width: frames.original.width, height: frames.original.height),
+            for: current
+        )
+        guard let next = CanvasSpatialNavigator().pane(direction.canvasDirection, from: current, in: splitLayout),
+              let currentPanel = splitLayout.selectedPanelId(in: current)?.rawValue,
+              let nextPanel = splitLayout.selectedPanelId(in: next)?.rawValue,
+              panels[nextPanel] != nil,
+              let original = model.frame(of: nextPanel),
+              let floating = model.frame(of: currentPanel),
+              canvas.transferSpotlight(from: currentPanel, restoring: frames.original,
+                                       to: nextPanel, inPane: next.rawValue, frame: floating) else { return false }
+        spotlightPaneID = next.rawValue
+        spotlightFrames = (original: original, enlarged: floating)
+        focusPanel(nextPanel)
+        return true
     }
 
     /// Canvas-mode directional focus: nearest pane spatially, then reveal it.
@@ -201,6 +289,7 @@ extension Workspace {
         from snapshot: SessionWorkspaceSnapshot,
         oldToNewPanelIds: [UUID: UUID]
     ) {
+        spotlightPresets = snapshot.spotlightPresets ?? SpotlightPresets()
         if let canvasPanes = snapshot.canvasPanes {
             let restored: [CanvasModel.PersistablePane] = canvasPanes.compactMap { pane in
                 // Pre-tab snapshots stored a single panel in `panelId`.

@@ -34,3 +34,28 @@ struct PaneSpotlightToolbarButton: View {
         .titlebarInteractiveControl()
     }
 }
+
+
+struct PaneSpotlightPresetsMenu: View {
+    let workspace: Workspace
+
+    var body: some View {
+        let label = String(localized: "toolbar.spotlight.presets", defaultValue: "Pane Layout Presets")
+        Menu {
+            Button(String(localized: "toolbar.spotlight.gridPreset", defaultValue: "Split Grid")) {
+                workspace.switchSpotlightPreset(to: .grid)
+            }
+            Button(String(localized: "toolbar.spotlight.focusPreset", defaultValue: "Focused Pane")) {
+                workspace.switchSpotlightPreset(to: .focus)
+            }
+        } label: {
+            Image(systemName: "rectangle.split.2x2")
+                .accessibilityLabel(label)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help(label)
+        .accessibilityIdentifier("titlebarControl.paneLayoutPresets")
+        .titlebarInteractiveControl()
+    }
+}

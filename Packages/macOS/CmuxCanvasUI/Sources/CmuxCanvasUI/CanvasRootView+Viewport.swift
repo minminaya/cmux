@@ -42,6 +42,20 @@ extension CanvasRootView: CanvasViewportControlling {
         needsLayout = true
     }
 
+    /// Moves enlargement to another pane while retaining the floating frame.
+    public func transferSpotlight(
+        from previous: UUID, restoring original: CGRect, to next: UUID, inPane paneID: UUID, frame: CGRect
+    ) -> Bool {
+        guard dragSession == nil, spotlightExpansionFrame == nil, spotlightRestore == nil,
+              animatingSpotlightPaneID == nil, model.paneID(containing: next)?.rawValue == paneID else { return false }
+        model.setFrame(original, for: previous)
+        model.bringToFront(next)
+        spotlightPaneID = paneID
+        modelDidChangeExternally(animated: false)
+        moveSpotlightPane(to: frame) { [weak self] in self?.startSpotlightRestore() }
+        return true
+    }
+
     /// Animates the enlarged pane back to its split position.
     ///
     /// - Parameters:

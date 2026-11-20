@@ -1027,7 +1027,7 @@ public final class CmuxWebView: CmuxUndoableWebView {
     // NSView (WKWebView), not to sibling SwiftUI overlays. Notify the panel system so
     // bonsplit focus tracks which pane the user clicked in.
     public override func mouseDown(with event: NSEvent) {
-        tracksPaneClick = !browserNativeInputDeliveryOwner.isDispatchActive && event.clickCount == 1
+        tracksPaneClick = !browserNativeInputDeliveryOwner.isDispatchActive && (1...2).contains(event.clickCount)
             && event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty
         if !browserNativeInputDeliveryOwner.isDispatchActive { onPhysicalUserInteraction?() }
         if diffViewerDocumentState.documentConfirmed {
@@ -1066,7 +1066,9 @@ public final class CmuxWebView: CmuxUndoableWebView {
         tracksPaneClick = false
         super.mouseUp(with: event)
         if clicked {
-            NotificationCenter.default.post(name: Self.didCompletePaneClickNotification, object: self)
+            NotificationCenter.default.post(
+                name: Self.didCompletePaneClickNotification, object: self, userInfo: ["clickCount": event.clickCount]
+            )
         }
     }
 

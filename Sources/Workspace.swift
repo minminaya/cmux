@@ -202,6 +202,7 @@ extension Workspace {
             layout: layout,
             layoutMode: (spotlightPaneID == nil ? layoutMode : .splits).rawValue,
             canvasPanes: canvasSessionPaneSnapshots(),
+            spotlightPresets: spotlightPresetsForSession(),
             panels: panelSnapshots,
             statusEntries: statusSnapshots,
             logEntries: logSnapshots,
@@ -3026,6 +3027,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
     let savedCanvasModel = CanvasModel(metricsProvider: { CanvasLayoutSettings.currentMetrics() })
     var spotlightCanvasModel: CanvasModel?
     var spotlightPaneID: UUID?
+    var spotlightPresets = SpotlightPresets()
     var spotlightFrames: (original: CGRect, enlarged: CGRect)?
     var canvasModel: CanvasModel { spotlightCanvasModel ?? savedCanvasModel }
     private struct SurfaceTabBarExecutableButton {

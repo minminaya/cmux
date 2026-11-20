@@ -17,6 +17,9 @@ extension Workspace {
     /// an edge with no inner neighbor falls through to the workspace tree.
     @discardableResult
     func moveFocus(direction: NavigationDirection) -> Bool {
+        if spotlightPaneID != nil {
+            return moveSpotlightFocus(direction: direction)
+        }
         if layoutMode == .canvas {
             return moveCanvasFocus(direction: direction)
         }

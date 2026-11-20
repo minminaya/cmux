@@ -1129,7 +1129,9 @@ struct BrowserPanelView: View {
             .onReceive(NotificationCenter.default.publisher(for: CmuxWebView.didCompletePaneClickNotification)) { notification in
                 guard let webView = notification.object as? CmuxWebView,
                       webView === panel.webView, isCurrentPaneOwner else { return }
-                owningWorkspace?.spotlightAfterExplicitPaneFocus(paneId)
+                owningWorkspace?.spotlightAfterExplicitPaneFocus(
+                    paneId, clickCount: notification.userInfo?["clickCount"] as? Int ?? 1
+                )
             }
             .onReceive(NotificationCenter.default.publisher(for: .ghosttySurfaceTabBarFontSizeDidChange)) { _ in
                 tabBarFontSize = GhosttyConfig.loadForCmux(globalFontMagnificationPercent: GlobalFontMagnification.storedPercent).surfaceTabBarFontSize

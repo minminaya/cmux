@@ -39,6 +39,7 @@ struct WorkspaceCanvasHostView: View {
             isWorkspaceVisible: isWorkspaceVisible,
             accentColor: accentColor
         )
+        .id(ObjectIdentifier(workspace.canvasModel))
         .onChange(of: workspace.orderedPanelIds) { _, _ in
             if let spotlightPaneID = workspace.spotlightPaneID,
                !workspace.bonsplitController.allPaneIds.contains(where: { $0.id == spotlightPaneID }) {
